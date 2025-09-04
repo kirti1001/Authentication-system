@@ -1,3 +1,16 @@
 {"image":"mcr.microsoft.com/devcontainers/universal:2",
-"forwardPorts": [4000]
+"forwardPorts": [4000],
+"customizations":{
+    "vscode": {
+        "extensions": [
+            "esbenp.prettier-vscode",
+            "dbaeumer.vscode-eslint",
+            "rangav.vscode-thunder-client"
+        ],
+        "settings": {
+            "editor.fontSize": 25,
+            "terminal.integrated.fontSize": 22
+        }
+    }
+}
 }
