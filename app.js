@@ -4,7 +4,9 @@ const User = require('./model/user')
 const express = require('express')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken');
-const cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser');
+const auth = require('./middleware/auth');
+
 
 const app = express()
 app.use(express.json())
@@ -103,6 +105,12 @@ app.post("/login", async(req, res) => {
         console.log(error);
         res.status(500).send("Internal server error") // Added error response
     }
+})
+
+app.get("/dashboard", auth, (req, res) => {
+    //querry to DB for that user id
+    console.log(req.user);
+    res.send("welcome to dashboard")
 })
 
 module.exports = app
