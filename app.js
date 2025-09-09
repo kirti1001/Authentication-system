@@ -21,12 +21,13 @@ app.post("/register", async(req,res) => {
         //all data should exists
         if (!(firstname && lastname && email && password)){
             res.status(400).send('All fields are compulsary')
-
+            return; // Added return to stop execution
         }
         //check if user already exists
         const existingUser = await User.findOne({ email })
         if (existingUser) {
             res.status(401).send('User exist with this email')
+            return; // Added return to stop execution
         }
         //encrypt the password
         const myEncPassword = await bcrypt.hash(password, 10)
@@ -40,7 +41,7 @@ app.post("/register", async(req,res) => {
         //generate a token for user and send it
         const token = jwt.sign(
             { id: user._id, email },
-            'shhhhh',
+            process.env.JWT_SECRET || 'shhhhh', // Use environment variable for secret
             {
               expiresIn: "2h"
             }
@@ -51,6 +52,7 @@ app.post("/register", async(req,res) => {
 
     }catch(error){
         console.log(error);
+        res.status(500).send("Internal server error") // Added error response
     }
 
 })
@@ -62,36 +64,45 @@ app.post("/login", async(req, res) => {
         //validation
         if (!(email && password)) {
             res.status(400).send("Some fields are missing")
+            return; // Added return to stop execution
         }
         //find user in DB
         const user = await User.findOne({email})
-        //if user is not there
-        //match the password
-        if (user && (await bycrypt.compare(password,user.password))){
-            jwt.sign(
-                {id: user._id},
-                'shhhhh',
-                {
-                    expiresIn: "2h"
-                }
-            );
-            user.token = token
-            user.password = undefined
+        
+        //if user is not there or password doesn't match
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            res.status(401).send("Invalid credentials")
+            return; // Added return to stop execution
         }
+        
+        // If credentials are valid, generate token
+        const token = jwt.sign(
+            {id: user._id},
+            process.env.JWT_SECRET || 'shhhhh', // Use environment variable for secret
+            {
+                expiresIn: "2h"
+            }
+        );
+        
+        user.token = token
+        user.password = undefined
+        
         //send token to user as cookie
         const options = {
             expires: new Date(Date.now() + 3*24*60*60*1000),
             httpOnly: true
         };
-        res.status(200).send("token",token, options).json({
+        
+        res.cookie("token", token, options); // Set cookie
+        res.status(200).json({
             success: true,
             token,
             user
         });
     } catch (error) {
         console.log(error);
+        res.status(500).send("Internal server error") // Added error response
     }
-
 })
 
 module.exports = app
